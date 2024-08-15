@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    MIDI Notes • Home
+{% endblock %}
+
+{% block scripts %}
+    <!-- WebMidi -->
+    <script src="https://cdn.jsdelivr.net/npm/webmidi@latest/dist/iife/webmidi.iife.js"></script>
+    <script src="http://unpkg.com/tone"></script>
+    
+    <script src="static/js/play.js" defer></script>
+    <script src="static/js/note.js" defer></script>
+
+{% endblock %}
+
+{% block main %}
+    <div class="content m-4">
+        <form id="config" class="d-flex w-50 mb-2 align-items-center">
+            <div class="col">
+                <label for="input">Choose Midi Input:</label>
+                <select name="input" id="input"> <!-- required -->
+                    <option value="" selected>None</option>
+                </select>
+            </div>
+            <div class="col">
+                <input type="file" id="midi" name="midi" accept="application/json" required>
+            </div>
+            <div class="col">
+                <input id="submit" name="submit" type="submit">
+            </div>
+        </form>
+        <p>
+            Please use this link to convert MIDI to JSON:
+            <a href="https://tonejs.github.io/Midi/" target="_blank">Link</a>
+        </p>
+        <div class="d-flex align-items-center">
+
+            <label for="displacement">Displacement:</label> 
+            <input id="displacement" step="0.01" type="range" min="0.25" max="2" value="1">
+            <output for="displacement">2.0</output>
+
+        </div>
+        <canvas class="border" width="1000" height="400" id="canvas">
+            The browser doesn't support the canvas element
+        </canvas>
+    </div>
+{% endblock %}
