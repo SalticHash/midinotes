@@ -1,5 +1,6 @@
 const configForm = document.getElementById('config');
 const boundary = [];
+let configured = false
 let keyCount = undefined;
 const keyBufferTime = 1
 const keyMaxTime = 0.5
@@ -92,35 +93,44 @@ function pressKeyMouse(e) {
     }
 }
 
+const midiOptions = document.getElementById("input")
+
 WebMidi
     .enable()
     .then(onEnabled)
     .catch(err => alert(err));
 
-    function onEnabled() {
+function onEnabled() {
     WebMidi.inputs.forEach((device, index) => {
-        input.innerHTML += `<option value="${index}">${device.name}</option>`;
+        setTimeout(() => {
+            midiOptions.selectedIndex = index + 1
+        }, 100)
+
+        midiOptions.innerHTML += `<option value="${index}">${device.name}</option>`;
     });
 };
 
 function onSelected(e) {
     e.preventDefault();
     Tone.start()
-    midi(e.target[1]);
+    let file = e.target[1]
+    midi(file);
     
-    const selected = e.target[0].options['selectedIndex'] - 1;
+    const selected = midiOptions.selectedIndex - 1;
+
     if (selected == -1) {
+        alert('Using touch controls.');
         config(36)
         config(96)
         return
     }
 
     alert('Please press the lowest key of your keyboard and then the highest.');
-    config(36)
-    config(96)
+    //config(36)
+    //config(96)
     const Input = WebMidi.inputs[selected];
-    Input.channels[1].addListener("noteon", e => keyon(e));
-    Input.channels[1].addListener("noteoff", e => keyoff(e));
+    Input.addListener("noteon", e => keyon(e));
+    Input.addListener("noteoff", e => keyoff(e));
 };
 
 async function midi(input) {
@@ -140,11 +150,12 @@ async function midi(input) {
 };
 
 function config(key) {
-    if (boundary.length === 2) return;
+    if (boundary.length >= 2) return false;
     boundary.push(key);
     if (boundary.length === 2) {
         doneConfig();
     };
+    return true
 };
 
 function sortTwo(arr) {
@@ -163,27 +174,34 @@ function doneConfig() {
     alert(`Done configuring!\nPiano keys: ${boundary[0]} - ${boundary[1]} (${keyCount})`);
     document.getElementById('config').remove();
     updateKeys();
+    configured = true
     window.requestAnimationFrame(loop);
 };
 
 function keyon(e) {
     let note = undefined
-    if (typeof e == MIDIInput)
+    if (typeof e == "object")
         note = e.note.number
     else note = e
-
+    
+    if (!configured) {
+        config(note);
+        return
+    }
+    
     if (note < boundary[0] || note > boundary[1]) return;
 
-    
+    console.log(note)
     keysPressed[note]["buffer"] = keyBufferTime
     keysPressed[note]["pressed"] = true;
 
-    config(note);
 };
 
 function keyoff(e) {
+    if (!configured) return;
+
     let note = undefined
-    if (typeof e == MIDIInput)
+    if (typeof e == "object")
         note = e.note.number
     else note = e
 
