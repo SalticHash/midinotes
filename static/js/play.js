@@ -97,10 +97,10 @@ const midiOptions = document.getElementById("input")
 
 WebMidi
     .enable()
-    .then(onEnabled)
+    .then(webMidiEnabled)
     .catch(err => alert(err));
 
-function onEnabled() {
+function webMidiEnabled() {
     WebMidi.inputs.forEach((device, index) => {
         setTimeout(() => {
             midiOptions.selectedIndex = index + 1
@@ -114,14 +114,14 @@ function onSelected(e) {
     e.preventDefault();
     Tone.start()
     let file = e.target[1]
-    midi(file);
+    getMidiFileData(file);
     
     const selected = midiOptions.selectedIndex - 1;
 
     if (selected == -1) {
         alert('Using touch controls.');
-        config(36)
-        config(96)
+        configKeyRange(36)
+        configKeyRange(96)
         return
     }
 
@@ -133,11 +133,12 @@ function onSelected(e) {
     Input.addListener("noteoff", e => keyoff(e));
 };
 
-async function midi(input) {
+
+async function getMidiFileData(input) {
     const file = input.files[0];
-    if (file.type !== 'application/json') return
-    const fileText = await file.text()
-    const midi = JSON.parse(fileText)
+    if (file.type !== 'audio/midi' && file.type !== 'audio/mid') return
+    const fileBytes = await file.bytes()
+    const midi = new Midi(fileBytes);
     tempo = midi.header.ppq
     midi.tracks.forEach(track => {
         track.notes.forEach(note => {
@@ -149,7 +150,7 @@ async function midi(input) {
     });
 };
 
-function config(key) {
+function configKeyRange(key) {
     if (boundary.length >= 2) return false;
     boundary.push(key);
     if (boundary.length === 2) {
@@ -163,6 +164,7 @@ function sortTwo(arr) {
     arr[0] = temp
     arr[1] = Math.max(arr[0], arr[1])
 }
+
 function doneConfig() {
     sortTwo(boundary);
     boundary[1] += 1;
@@ -185,13 +187,12 @@ function keyon(e) {
     else note = e
     
     if (!configured) {
-        config(note);
+        configKeyRange(note);
         return
     }
     
     if (note < boundary[0] || note > boundary[1]) return;
 
-    console.log(note)
     keysPressed[note]["buffer"] = keyBufferTime
     keysPressed[note]["pressed"] = true;
 
